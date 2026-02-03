@@ -259,10 +259,17 @@ form textarea {
     display: flex;
     align-items: center;
     gap: 8px;
+    flex-wrap: wrap;
 }
 .points-adjust-form input[type="text"] {
     font-size: 1rem;
     padding: 4px 8px;
     height: 34px;
     box-sizing: border-box;
+}
+.copy-department-row {
+    flex-basis: 100%;
+    display: flex;
+    align-items: center;
+    gap: 8px;
 }
