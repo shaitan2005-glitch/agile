@@ -75,6 +75,14 @@
                                     </select>
                                     <input type="text" name="reason" placeholder="Комментарий">
                                     <button type="submit">Сохранить</button>
+                                    <div>
+                                        <select name="copy_department">
+                                            <option value="">— Переслать в отдел —</option>
+                                            {% for dept in all_departments %}
+                                                <option value="{{ dept }}">{{ dept }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
                                 </form>
                             </td>
                         </tr>
