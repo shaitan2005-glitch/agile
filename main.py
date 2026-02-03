@@ -689,9 +689,11 @@ def adjust_points(
         taken_at,
         completed_at,
     ) = task_row
+    if copy_department and completed_at is None:
+        completed_at = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     c.execute(
-        "UPDATE tasks SET points = ?, adjust_comment = ? WHERE id = ?",
-        (new_points, reason.strip(), task_id)
+        "UPDATE tasks SET points = ?, adjust_comment = ?, completed_at = ? WHERE id = ?",
+        (new_points, reason.strip(), completed_at, task_id)
     )
     if copy_department and copy_department != original_department:
         c.execute("""
