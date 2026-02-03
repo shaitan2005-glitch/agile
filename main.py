@@ -595,11 +595,12 @@ def admin_completed_tasks(
 ):
     conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
+    c.execute("SELECT DISTINCT department FROM users ORDER BY department")
+    all_departments = [r[0] for r in c.fetchall()]
     # Получаем список отделов и пользователей
     departments = []
     if user["role"] == "superadmin":
-        c.execute("SELECT DISTINCT department FROM users ORDER BY department")
-        departments = [r[0] for r in c.fetchall()]
+        departments = all_departments
         if department not in departments:
             department = departments[0] if departments else None
     else:
@@ -637,6 +638,7 @@ def admin_completed_tasks(
         "selected_department": department,
         "users": users,
         "selected_user": username,
+        "all_departments": all_departments,
         "year": year,
         "month": month,
         "tasks": tasks,
@@ -650,6 +652,7 @@ def adjust_points(
     request: Request,
     new_points: int = Form(...),
     reason: str = Form(...),
+    copy_department: Optional[str] = Form(None),
     user=Depends(require_role("admin", "superadmin"))
 ):
     department = request.query_params.get("department", "")
@@ -663,10 +666,48 @@ def adjust_points(
     if month: redirect_url += f"&month={month}"
     conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
+    c.execute("""
+        SELECT title, description, department, assigned_by, created_at,
+               taken_by, taken_at, completed_at
+        FROM tasks
+        WHERE id = ?
+    """, (task_id,))
+    task_row = c.fetchone()
+    if not task_row:
+        conn.close()
+        raise HTTPException(status_code=404, detail="Task not found")
+    (
+        title,
+        description,
+        original_department,
+        assigned_by,
+        created_at,
+        taken_by,
+        taken_at,
+        completed_at,
+    ) = task_row
     c.execute(
         "UPDATE tasks SET points = ?, adjust_comment = ? WHERE id = ?",
         (new_points, reason.strip(), task_id)
     )
+    if copy_department and copy_department != original_department:
+        c.execute("""
+            INSERT INTO tasks (
+                title, description, points, department, assigned_by,
+                created_at, taken_by, taken_at, completed_at, adjust_comment
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """, (
+            title,
+            description,
+            new_points,
+            copy_department,
+            user["id"],
+            datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            None,
+            None,
+            None,
+            None,
+        ))
     conn.commit()
     conn.close()
     return RedirectResponse(url=redirect_url, status_code=303)
