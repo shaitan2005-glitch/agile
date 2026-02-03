@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="ru">
+	<head>
+		<meta charset="UTF-8">
+		<title>Задачи — {{ selected_department }}</title>
+		<link rel="stylesheet" href="/static/style.css">
+	</head>
+	<body>
+		<div class="top-bar">
+			<div class="top-bar-left">
+				<a href="/" class="btn">На главную</a>
+			</div>
+			<div class="top-bar-right">
+				Вы авторизованы как: <strong>{{ user.username }}</strong> ({{ user.role }})
+				<a href="/logout" class="btn">Выйти</a>
+			</div>
+		</div>
+		<div class="container">
+			<h1>Задачи — {{ selected_department }}</h1>
+			<form method="get" class="form-inline">
+				{% if user.role == "superadmin" %}
+					<label for="department">Отдел:</label>
+					<select id="department" name="department" onchange="this.form.submit()">
+						{% for d in departments %}
+							<option value="{{ d }}" {% if selected_department == d %}selected{% endif %}>{{ d }}</option>
+						{% endfor %}
+					</select>
+				{% endif %}
+				<label for="year">Год:</label>
+				<select id="year" name="year" onchange="this.form.submit()">
+					{% for y in range(2023, 2031) %}
+						<option value="{{ y }}" {% if year == y %}selected{% endif %}>{{ y }}</option>
+					{% endfor %}
+				</select>
+				<label for="month">Месяц:</label>
+				<select id="month" name="month" onchange="this.form.submit()">
+					{% for m in range(1, 13) %}
+						<option value="{{ m }}" {% if month == m %}selected{% endif %}>{{ m }}</option>
+					{% endfor %}
+				</select>
+				<label for="status">Статус:</label>
+				<select id="status" name="status" onchange="this.form.submit()">
+					<option value="" {% if not status %}selected{% endif %}>Все</option>
+					<option value="free" {% if status == 'free' %}selected{% endif %}>Свободные</option>
+					<option value="taken" {% if status == 'taken' %}selected{% endif %}>Взятые</option>
+					<option value="reviewed" {% if status == 'reviewed' %}selected{% endif %}>Оценённые</option>
+				</select>
+			</form>
+			{% if status == 'reviewed' %}
+				<div class="points-summary">
+					Вам начислено за {{ month }}/{{ year }}: <strong>{{ total_points }} {{ plural_points }}</strong>
+				</div>
+			{% elif status != 'free' %}
+				<div class="points-summary">
+					Максимум баллов за {{ month }}/{{ year }}: <strong>{{ total_points }} {{ plural_points }}</strong>
+				</div>
+			{% endif %}
+			{% if tasks %}
+				<ul class="task-list">
+					{% for task in tasks %}
+						<li class="{% if task.adjust_comment %}task-completed{% endif %}">
+							<h3>
+								{{ task.title }} ({{ task.points }} {{ pluralize_points(task.points) }})
+								{% if status == 'reviewed' %}
+									– начислено
+								{% else %}
+									– максимум
+								{% endif %}
+							</h3>
+							<p>{{ task.description }}</p>
+							<small>Создано: {{ task.created_at }} • Создал: {{ task.creator_username }}</small><br>
+							{% if task.completed_at %}
+								<small>Выполнено: {{ task.completed_at }}</small><br>
+								<small>Выполнил: {{ task.taken_by_username }}</small><br>
+								{% if task.adjust_comment %}
+									<p><em>Комментарий к оценке: {{ task.adjust_comment }}</em></p>
+								{% endif %}
+							{% elif task.taken_by is none %}
+								<form method="post" action="/tasks/take/{{ task.id }}" style="display:inline;">
+									<button type="submit" class="btn btn-small">Взять</button>
+								</form>
+							{% elif task.taken_by == user.id %}
+								<form method="post" action="/tasks/complete/{{ task.id }}" style="display:inline;">
+									<button type="submit" class="btn btn-small" onclick="return confirm('Вы уверены, что хотите отметить задачу как выполненной?');">
+										Выполнено
+									</button>
+								</form>
+								<small>Вы взяли эту задачу: {{ task.taken_at }}</small>
+							{% else %}
+								<small>Задачу взял: {{ task.taken_by_username }} ({{ task.taken_at }})</small>
+							{% endif %}
+						</li>
+					{% endfor %}
+				</ul>
+			{% else %}
+				<p>Нет доступных задач за выбранный месяц.</p>
+			{% endif %}
+		</div>
+	</body>
+</html>

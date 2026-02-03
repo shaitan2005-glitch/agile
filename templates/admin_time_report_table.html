@@ -1,0 +1,29 @@
+{% for department, users in summary.items() %}
+    <h2>Отдел: {{ department }}</h2>
+    {% for username, logs in users.items() %}
+        <h3>Пользователь: {{ username }}</h3>
+        <table border="1" cellpadding="8" cellspacing="0" style="margin-bottom: 20px; width: 100%;">
+            <thead>
+                <tr>
+                    <th>Дата</th>
+                    <th>Часы работы</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for log in logs %}
+                    <tr>
+                        <td>{{ log.date }}</td>
+                        <td>{{ "%.2f"|format(log.hours / 3600) }}</td>
+                    </tr>
+                {% endfor %}
+                <tr class="total">
+                    <td>Итого</td>
+                    <td>{{ "%.2f"|format(totals[department][username] / 3600) }}</td>
+                </tr>
+            </tbody>
+        </table>
+    {% endfor %}
+{% endfor %}
+{% if summary|length == 0 %}
+    <p>Нет данных за указанный период.</p>
+{% endif %}

@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Система учёта времени</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    {% if user %}
+    <div class="top-bar">
+        <div class="top-bar-left"></div>
+        <div class="top-bar-right">
+            Вы авторизовались как: <strong>{{ user.username }}</strong> ({{ user.role }})
+            <a href="/logout" class="btn">Выйти</a>
+        </div>
+    </div>
+    {% endif %}
+    <div class="container">
+        <h1>Система контроля рабочего процесса ИРТА Абакан</h1>
+        {% if user and user.role in ["admin", "superadmin"] %}
+            <ul class="nav-menu">
+                <li><a href="/admin">Перейти в админ-панель</a></li>
+                <li><a href="/tasks">Мои задачи</a></li>
+            </ul>
+        {% elif user %}
+            <ul class="nav-menu">
+                <li><a href="/tasks">Мои задачи</a></li>
+            </ul>
+        {% else %}
+            <ul class="nav-menu">
+                <li><a href="/login">Войти</a></li>
+            </ul>
+        {% endif %}
+    </div>
+</body>
+</html>

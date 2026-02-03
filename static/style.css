@@ -1,0 +1,268 @@
+/* === Общие === */
+li {
+	list-style-type: none;
+}
+ul {
+	padding-left: 0;
+}
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f4f6f8;
+    margin: 0;
+    padding: 0;
+    color: #333;
+}
+h1 {
+    font-size: 28px;
+    margin-bottom: 20px;
+}
+h2 {
+    font-size: 22px;
+    margin-top: 30px;
+}
+h3 {
+    font-size: 18px;
+    margin-top: 20px;
+}
+/* === Контейнеры === */
+.container {
+    max-width: 1000px;
+    margin: 40px auto;
+    padding: 20px;
+    background-color: #fff;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+    border-radius: 8px;
+}
+
+/* === Верхняя панель === */
+.top-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #333;
+    color: white;
+    padding: 10px 20px;
+}
+.top-bar-left,
+.top-bar-right {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+.top-bar .btn {
+    margin-left: 10px;
+}
+
+/* === Кнопки === */
+.btn {
+    display: inline-block;
+    padding: 10px 20px;
+    background: #005bbb;
+    color: white;
+    text-decoration: none;
+    border: none;
+    border-radius: 5px;
+    font-size: 14px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.btn:hover {
+    background: #004799;
+}
+
+.btn-small {
+    padding: 6px 12px;
+    font-size: 14px;
+}
+
+.btn-large {
+    font-size: 18px;
+    padding: 12px 24px;
+}
+
+/* === Формы === */
+.form {
+    display: block;
+    width: 100%;
+}
+.form-row {
+    display: flex;
+    gap: 30px;
+    margin-bottom: 15px;
+}
+.form-field {
+    flex: 1 1 0;
+    min-width: 220px;
+    max-width: 100%;
+    box-sizing: border-box;
+}
+.form-field label {
+    display: block;
+    margin-bottom: 6px;
+    font-weight: bold;
+}
+.form-narrow {
+    max-width: 400px;
+    margin: 0 auto;
+}
+.form input[type="text"],
+.form input[type="password"],
+.form input[type="date"],
+.form select {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    font-size: 14px;
+    box-sizing: border-box;
+}
+.error {
+    background: #ffd2d2;
+    color: #900;
+    padding: 10px;
+    border-radius: 5px;
+    margin-bottom: 20px;
+}
+/* === Навигация === */
+.nav-menu {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+.nav-menu a {
+    padding: 12px 16px;
+    background-color: #007acc;
+    color: white;
+    text-decoration: none;
+    border-radius: 6px;
+    font-weight: bold;
+    transition: background-color 0.2s ease-in-out;
+}
+.nav-menu a:hover {
+    background-color: #005fa3;
+}
+.nav-menu li a {
+    display: inline-block;
+    width: 280px; /* фиксированная ширина */
+    padding: 12px 16px;
+    background-color: #007acc;
+    color: white;
+    text-decoration: none;
+    border-radius: 6px;
+    font-weight: bold;
+    transition: background-color 0.2s ease-in-out;
+    text-align: left; /* важный момент — выравнивание текста */
+    margin-bottom: 12px;
+}
+.nav-menu li:not(:last-child) {
+    margin-bottom: 12px;
+}
+/* === Таблицы === */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 2em;
+    background-color: #fff;
+}
+th, td {
+    padding: 10px;
+    border: 1px solid #ccc;
+    text-align: left;
+}
+.total {
+    font-weight: bold;
+    background-color: #f0f0f0;
+}
+/* === Таски === */
+.task-list {
+  list-style: none;
+  padding: 0;
+}
+.task-list li {
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  padding: 12px;
+  margin-bottom: 12px;
+  background: #fafafa;
+}
+.task-list h3 {
+  margin: 0 0 6px;
+}
+.task-list p {
+  margin: 4px 0;
+}
+form textarea {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    resize: vertical;
+    font-size: 14px;
+    box-sizing: border-box;
+}
+.success-message {
+    background: #d4edda;
+    color: #155724;
+    padding: 10px;
+    border-radius: 5px;
+    margin-bottom: 20px;
+}
+.form-inline {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+.form-inline label {
+  font-weight: bold;
+}
+.form-inline select {
+  padding: 5px 10px;
+  font-size: 16px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+.task-list li.task-completed {
+  background-color: #c8e6c9;
+}
+.points-summary {
+  background: #f0f8ff;
+  padding: 12px;
+  border-left: 4px solid #007acc;
+  margin-bottom: 20px;
+}
+.points-adjust-form select {
+    font-size: 1rem;
+    padding: 4px 8px;
+    max-height: 200px;
+    overflow-y: auto;
+    box-sizing: border-box;
+}
+.points-adjust-form button {
+    font-size: 1rem;
+    padding: 4px 12px;
+    height: 34px;
+    vertical-align: middle;
+    margin-left: 8px;
+    cursor: pointer;
+    background-color: #007BFF;
+    border: none;
+    color: white;
+    border-radius: 4px;
+    transition: background-color 0.3s ease;
+}
+.points-adjust-form button:hover {
+    background-color: #0056b3;
+}
+.points-adjust-form {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.points-adjust-form input[type="text"] {
+    font-size: 1rem;
+    padding: 4px 8px;
+    height: 34px;
+    box-sizing: border-box;
+}

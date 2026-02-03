@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Выполненные задачи – {{ selected_user }}</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="top-bar">
+        <div class="top-bar-left">
+            <a href="/admin" class="btn">На главную</a>
+        </div>
+        <div class="top-bar-right">
+            Вы авторизованы как: <strong>{{ user.username }}</strong> ({{ user.role }})
+            <a href="/logout" class="btn">Выйти</a>
+        </div>
+    </div>
+    <div class="container">
+        <h1>Выполненные задачи — {{ selected_user }}</h1>
+        <form method="get" class="form-inline">
+            {% if user.role == "superadmin" %}
+                <label for="department">Отдел:</label>
+                <select id="department" name="department" onchange="this.form.submit()">
+                    {% for dept in departments %}
+                        <option value="{{ dept }}" {% if dept == selected_department %}selected{% endif %}>{{ dept }}</option>
+                    {% endfor %}
+                </select>
+            {% endif %}
+            <label for="selected_user">Пользователь:</label>
+            <select id="selected_user" name="username" onchange="this.form.submit()">
+                {% for u in users %}
+                    <option value="{{ u }}" {% if u == selected_user %}selected{% endif %}>{{ u }}</option>
+                {% endfor %}
+            </select>
+            <label for="year">Год:</label>
+            <select id="year" name="year" onchange="this.form.submit()">
+                {% for y in range(2023, 2031) %}
+                    <option value="{{ y }}" {% if y == year %}selected{% endif %}>{{ y }}</option>
+                {% endfor %}
+            </select>
+            <label for="month">Месяц:</label>
+            <select id="month" name="month" onchange="this.form.submit()">
+                {% for m in range(1, 13) %}
+                    <option value="{{ m }}" {% if m == month %}selected{% endif %}>{{ m }}</option>
+                {% endfor %}
+            </select>
+        </form>
+        <div class="points-summary">
+            Баллы пользователя за {{ month }}/{{ year }}: <strong>{{ total_points }} {{ plural_points }}</strong>
+        </div>
+        {% if tasks %}
+            <table class="task-table">
+                <thead>
+                    <tr>
+                        <th>Задача</th>
+                        <th>Баллы</th>
+                        <th>Дата</th>
+                        <th>Комментарий</th>
+                        <th>Изменить</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for t in tasks %}
+                        <tr class="{% if t.adjust_comment %}task-completed{% endif %}">
+                            <td>{{ t.title }}</td>
+                            <td>{{ t.points }}</td>
+                            <td>{{ t.completed_at }}</td>
+                            <td>{% if t.adjust_comment %}<em>{{ t.adjust_comment }}</em>{% else %}—{% endif %}</td>
+                            <td>
+                                <form method="post" action="/admin/adjust_points/{{ t.id }}" class="points-adjust-form">
+                                    <select name="new_points" required>
+                                        {% for i in range(-10, 11) %}
+                                            <option value="{{ i }}" {% if i == t.points %}selected{% endif %}>{{ i }}</option>
+                                        {% endfor %}
+                                    </select>
+                                    <input type="text" name="reason" placeholder="Комментарий">
+                                    <button type="submit">Сохранить</button>
+                                </form>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <p>Нет выполненных задач за выбранный месяц.</p>
+        {% endif %}
+    </div>
+</body>
+</html>

@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Отчёт по рабочему времени</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+<div class="top-bar">
+    <div class="top-bar-left">
+        <a href="/admin" class="btn">Назад в админ-панель</a>
+    </div>
+    <div class="top-bar-right">
+        Вы авторизировались как: <strong>{{ user.username }}</strong> ({{ user.role }})
+        <a href="/logout" class="btn">Выйти</a>
+    </div>
+</div>
+<div class="container">
+    <h1>Отчёт по рабочему времени</h1>
+    <form class="form" id="filterForm" onsubmit="return false;">
+        <div class="form-row">
+            <div class="form-field">
+                <label for="year">Год:</label>
+                <select id="year">
+                    {% for y in range(2025, 2036) %}
+                        <option value="{{ y }}" {% if year == y %}selected{% endif %}>{{ y }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-field">
+                <label for="month">Месяц:</label>
+                <select id="month">
+                    {% for m in range(1, 13) %}
+                        <option value="{{ m }}" {% if month == m %}selected{% endif %}>{{ m }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+        <div class="form-row">
+            <div class="form-field">
+                <label for="department">Отдел:</label>
+                <select id="department">
+                    <option value="">-- Все отделы --</option>
+                    {% for dept in all_departments %}
+                        <option value="{{ dept }}" {% if department == dept %}selected{% endif %}>{{ dept }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-field">
+                <label for="selected_user">Пользователь:</label>
+                <select id="selected_user">
+                    <option value="">-- Все пользователи --</option>
+                    {% for user in department_users %}
+                        <option value="{{ user }}" {% if selected_user == user %}selected{% endif %}>{{ user }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+    </form>
+
+    <div id="reportData">
+        <!-- Здесь будет динамически загружен отчёт -->
+    </div>
+</div>
+
+<script>
+    const yearSelect = document.getElementById('year');
+    const monthSelect = document.getElementById('month');
+    const departmentSelect = document.getElementById('department');
+    const userSelect = document.getElementById('selected_user');
+    const reportData = document.getElementById('reportData');
+    yearSelect.addEventListener('change', fetchReport);
+    monthSelect.addEventListener('change', fetchReport);
+    userSelect.addEventListener('change', fetchReport);
+    departmentSelect.addEventListener('change', async function () {
+        const dept = this.value;
+        if (dept === "") {
+            userSelect.innerHTML = '<option value="">-- Все пользователи --</option>';
+            userSelect.value = "";
+            fetchReport();
+            return;
+        }
+        userSelect.innerHTML = '<option value="">Загрузка...</option>';
+        const res = await fetch(`/api/users_by_department?department=${encodeURIComponent(dept)}`);
+        const data = await res.json();
+        userSelect.innerHTML = '<option value="">-- Все пользователи --</option>';
+        for (const name of data.users) {
+            const opt = document.createElement('option');
+            opt.value = name;
+            opt.textContent = name;
+            userSelect.appendChild(opt);
+        }
+        userSelect.value = "";
+        fetchReport();
+    });
+    async function fetchReport() {
+        const year = yearSelect.value;
+        const month = monthSelect.value;
+        const department = departmentSelect.value;
+        const user = userSelect.value;
+        const query = new URLSearchParams({
+            year, month, department, selected_user: user
+        });
+        const res = await fetch(`/admin/time_report_async?${query.toString()}`);
+        const html = await res.text();
+        reportData.innerHTML = html;
+    }
+	
+    fetchReport();
+</script>
+</body>
+</html>

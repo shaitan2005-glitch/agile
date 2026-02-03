@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Ручной ввод времени</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="top-bar">
+        <div class="top-bar-left">
+            <a href="/admin" class="btn">Назад в админ-панель</a>
+        </div>
+        <div class="top-bar-right">
+            Вы авторизировались как: <strong>{{ user.username }}</strong> ({{ user.role }})
+            <a href="/logout" class="btn">Выйти</a>
+        </div>
+    </div>
+    <div class="container">
+        <h1>Ручной ввод рабочего времени</h1>
+        <form method="post" action="/admin/manual_entry" class="form" id="manualEntryForm">
+            {% if user.role == 'superadmin' %}
+                <div class="form-row">
+                    <div class="form-field">
+                        <label for="department">Отдел:</label>
+                        <select id="department" name="department" onchange="filterUsersByDepartment()">
+                            <option value="">-- Все отделы --</option>
+                            {% for dept in departments %}
+                                <option value="{{ dept }}">{{ dept }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+            {% endif %}
+            <div class="form-row">
+                <div class="form-field">
+                    <label for="user_id">Пользователь:</label>
+                    <select id="user_id" name="user_id" required>
+                        {% for id, username, department in users %}
+                            <option value="{{ id }}" data-department="{{ department }}">{{ username }} ({{ department }})</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-field">
+                    <label for="date">Дата:</label>
+                    <input type="date" id="date" name="date" required value="{{ now.strftime('%Y-%m-%d') }}">
+                </div>
+                <div class="form-field">
+                    <label for="hours_worked_input">Отработано часов:</label>
+                    <input type="text" id="hours_worked_input" name="hours_worked" required>
+                </div>
+            </div>
+            <button type="submit" class="btn">Сохранить</button>
+        </form>
+        <script>
+            function filterUsersByDepartment() {
+                const selectedDept = document.getElementById("department").value;
+                const userSelect = document.getElementById("user_id");
+                const options = userSelect.querySelectorAll("option");
+                options.forEach(opt => {
+                    const dept = opt.getAttribute("data-department");
+                    opt.style.display = (selectedDept === "" || dept === selectedDept) ? "block" : "none";
+                });
+                userSelect.selectedIndex = 0;
+            }
+            document.getElementById("manualEntryForm").addEventListener("submit", function(e) {
+                const input = document.getElementById("hours_worked_input");
+                const hours = parseFloat(input.value.replace(",", "."));
+                if (isNaN(hours) || hours <= 0) {
+                    alert("Введите корректное количество часов.");
+                    e.preventDefault();
+                    return;
+                }
+                const old = document.getElementById("seconds_worked_hidden");
+                if (old) old.remove();
+                const hiddenInput = document.createElement("input");
+                hiddenInput.type = "hidden";
+                hiddenInput.name = "seconds_worked";
+                hiddenInput.id = "seconds_worked_hidden";
+                hiddenInput.value = Math.round(hours * 3600);
+                this.appendChild(hiddenInput);
+            });
+        </script>
+    </div>
+</body>
+</html>

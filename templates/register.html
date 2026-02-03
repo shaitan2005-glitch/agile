@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Регистрация пользователя</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="top-bar">
+        <div class="top-bar-left">
+            <a href="/admin" class="btn">Назад в админ-панель</a>
+        </div>
+        <div class="top-bar-right">
+            Вы авторизировались как: <strong>{{ user.username }}</strong> ({{ user.role }})
+            <a href="/logout" class="btn">Выйти</a>
+        </div>
+    </div>
+    <div class="container">
+        <h1>Регистрация нового пользователя</h1>
+        {% if success %}
+            <div style="background: #d4edda; color: #155724; padding: 10px; margin-bottom: 20px;">
+                Пользователь зарегистрирован. Сгенерированный токен: <strong>{{ token }}</strong>
+            </div>
+        {% endif %}
+        <form method="post" class="form">
+            <div class="form-row">
+				<div class="form-field">
+					<label for="username">Имя пользователя:</label>
+					<input type="text" id="username" name="username" required>
+				</div>
+				<div class="form-field">
+					<label for="password">Пароль:</label>
+					<input type="password" id="password" name="password" required>
+				</div>
+			</div>
+			<div class="form-row">
+				<div class="form-field">
+					<label for="department">Отдел:</label>
+					<select name="department" id="department" required>
+						<option value="">-- Выберите отдел --</option>
+						<option value="Монтажеры">Монтажеры</option>
+						<option value="Корреспонденты">Корреспонденты</option>
+						<option value="Газета">Газета</option>
+						<option value="Газета">Операторы</option>
+					</select>
+				</div>
+				{% if user.role == "superadmin" %}
+				<div class="form-field">
+					<label for="role">Роль:</label>
+					<select name="role" id="role" required>
+						<option value="user">Пользователь</option>
+						<option value="admin">Администратор</option>
+					</select>
+				</div>
+				{% endif %}
+			</div>
+			<div style="margin-top: 20px;">
+				<button type="submit" class="btn">Зарегистрировать</button>
+			</div>
+        </form>
+    </div>
+</body>
+</html>
