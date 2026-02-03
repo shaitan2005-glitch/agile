@@ -596,7 +596,10 @@ def admin_completed_tasks(
     conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
     c.execute("SELECT DISTINCT department FROM users ORDER BY department")
-    all_departments = [r[0] for r in c.fetchall()]
+    user_departments = [r[0] for r in c.fetchall()]
+    c.execute("SELECT DISTINCT department FROM tasks ORDER BY department")
+    task_departments = [r[0] for r in c.fetchall()]
+    all_departments = sorted({*user_departments, *task_departments})
     # Получаем список отделов и пользователей
     departments = []
     if user["role"] == "superadmin":
