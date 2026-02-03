@@ -78,9 +78,8 @@
                                         <button type="submit">Сохранить</button>
                                     </div>
                                     <div class="copy-department-row">
-                                        <span>Переслать в отдел:</span>
                                         <select name="copy_department">
-                                            <option value="">— Выбрать отдел —</option>
+                                            <option value="">Передать в отдел (Необязательно)</option>
                                             {% for dept in all_departments %}
                                                 <option value="{{ dept }}">{{ dept }}</option>
                                             {% endfor %}
