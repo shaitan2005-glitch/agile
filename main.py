@@ -494,6 +494,24 @@ def send_task_notification(department: str, title: str, description: str):
         requests.post(url, data=payload, timeout=5)
     except Exception as e:
         print(f"Ошибка отправки уведомления: {e}")
+
+def send_task_taken_notification(from_department: str, to_department: str, title: str):
+    if not from_department or not to_department or from_department == to_department:
+        return
+    chat_id = DEPARTMENT_CHATS.get(to_department)
+    if not chat_id:
+        return
+    message = (
+        f"*Отдел получил задачу от другого отдела*\n"
+        f"Отдел-инициатор: *{from_department}*\n"
+        f"Задача: *{title}*"
+    )
+    url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
+    payload = {"chat_id": chat_id, "text": message, "parse_mode": "Markdown"}
+    try:
+        requests.post(url, data=payload, timeout=5)
+    except Exception as e:
+        print(f"Ошибка отправки уведомления: {e}")
         
 @app.post("/tasks/create", response_class=HTMLResponse)
 def create_task(
@@ -543,19 +561,23 @@ def take_task(task_id: int, user=Depends(get_current_user)):
     conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
     # Проверка, свободна ли задача и от отдела пользователя
-    c.execute("SELECT department, taken_by FROM tasks WHERE id = ?", (task_id,))
+    c.execute("SELECT department, taken_by, assigned_by, title FROM tasks WHERE id = ?", (task_id,))
     row = c.fetchone()
     if not row:
         conn.close()
         raise HTTPException(404, "Задача не найдена")
-    dept, taken = row
+    dept, taken, assigned_by, title = row
     if dept != user["department"] or taken is not None:
         conn.close()
         raise HTTPException(403, "Нельзя взять задачу")
+    c.execute("SELECT department FROM users WHERE id = ?", (assigned_by,))
+    assigned_row = c.fetchone()
+    from_department = assigned_row[0] if assigned_row else ""
     now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     c.execute("UPDATE tasks SET taken_by = ?, taken_at = ? WHERE id = ?", (user["id"], now, task_id))
     conn.commit()
     conn.close()
+    send_task_taken_notification(from_department, dept, title)
     return RedirectResponse(url="/tasks", status_code=303)
     
 @app.post("/tasks/complete/{task_id}")
