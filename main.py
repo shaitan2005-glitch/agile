@@ -716,6 +716,24 @@ def adjust_points(
         (new_points, reason.strip(), task_id)
     )
     if copy_department and copy_department != original_department:
+        c.execute(
+            """
+            SELECT 1
+            FROM tasks
+            WHERE department = ?
+              AND title = ?
+              AND description = ?
+              AND assigned_by = ?
+              AND created_at = ?
+            LIMIT 1
+            """,
+            (copy_department, title, description, assigned_by, created_at),
+        )
+        duplicate_exists = c.fetchone() is not None
+        if duplicate_exists:
+            conn.commit()
+            conn.close()
+            return RedirectResponse(url=redirect_url, status_code=303)
         c.execute("""
             INSERT INTO tasks (
                 title, description, points, department, assigned_by,
@@ -726,8 +744,8 @@ def adjust_points(
             description,
             new_points,
             copy_department,
-            user["id"],
-            datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            assigned_by,
+            created_at,
             None,
             None,
             None,
