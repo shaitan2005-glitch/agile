@@ -474,12 +474,37 @@ def list_tasks(
 def create_task_form(request: Request, user=Depends(require_role("admin", "superadmin"))):
     conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
-    c.execute("SELECT DISTINCT department FROM users ORDER BY department")
-    departments = [row[0] for row in c.fetchall()]
+    if user["role"] == "superadmin":
+        c.execute("SELECT DISTINCT department FROM users ORDER BY department")
+        departments = [row[0] for row in c.fetchall()]
+        c.execute(
+            """
+            SELECT id, username, department
+            FROM users
+            WHERE role = 'user'
+            ORDER BY department, username
+            """
+        )
+    else:
+        departments = [user["department"]]
+        c.execute(
+            """
+            SELECT id, username, department
+            FROM users
+            WHERE department = ? AND role = 'user'
+            ORDER BY username
+            """,
+            (user["department"],)
+        )
+    employees = [
+        {"id": row[0], "username": row[1], "department": row[2]}
+        for row in c.fetchall()
+    ]
     conn.close()
     return templates.TemplateResponse("task_create.html", {
         "request": request, "user": user,
-        "departments": departments
+        "departments": departments,
+        "employees": employees
     })
     
 
@@ -520,6 +545,7 @@ def create_task(
     description: str = Form(""),
     points: int = Form(...),
     department: Optional[str] = Form(None),
+    assignee_id: Optional[str] = Form(None),
     user=Depends(require_role("admin", "superadmin"))
 ):
     # Определение отдела
@@ -529,30 +555,75 @@ def create_task(
         allowed_departments = {"Монтажеры", "Корреспонденты", "Газета", "Операторы"}
         if department not in allowed_departments:
             raise HTTPException(status_code=400, detail="Недопустимый отдел")
-    # Сохранение задачи
     now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
     conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
+    taken_by = None
+    taken_at = None
+    if assignee_id:
+        try:
+            assignee_id_int = int(assignee_id)
+        except ValueError:
+            conn.close()
+            raise HTTPException(status_code=400, detail="Некорректный сотрудник")
+        c.execute(
+            "SELECT id FROM users WHERE id = ? AND department = ? AND role = 'user'",
+            (assignee_id_int, department)
+        )
+        assignee_row = c.fetchone()
+        if not assignee_row:
+            conn.close()
+            raise HTTPException(status_code=400, detail="Выбранный сотрудник не найден в указанном отделе")
+        taken_by = assignee_id_int
+        taken_at = now
+
     c.execute("""
-        INSERT INTO tasks (title, description, points, department, assigned_by, created_at)
-        VALUES (?, ?, ?, ?, ?, ?)
-    """, (title, description, points, department, user["id"], now))
+        INSERT INTO tasks (
+            title, description, points, department, assigned_by,
+            created_at, taken_by, taken_at
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    """, (title, description, points, department, user["id"], now, taken_by, taken_at))
     conn.commit()
-    conn.close()
-    send_task_notification(department, title, description)
-    # Подготовка списка отделов для формы
-    departments = []
     if user["role"] == "superadmin":
-        conn2 = sqlite3.connect(DB_PATH)
-        c2 = conn2.cursor()
-        c2.execute("SELECT DISTINCT department FROM users ORDER BY department")
-        departments = [row[0] for row in c2.fetchall()]
-        conn2.close()
-    # Возврат той же страницы с уведомлением об успехе
+        c.execute("SELECT DISTINCT department FROM users ORDER BY department")
+        departments = [row[0] for row in c.fetchall()]
+    else:
+        departments = [user["department"]]
+
+    if user["role"] == "superadmin":
+        c.execute(
+            """
+            SELECT id, username, department
+            FROM users
+            WHERE role = 'user'
+            ORDER BY department, username
+            """
+        )
+    else:
+        c.execute(
+            """
+            SELECT id, username, department
+            FROM users
+            WHERE department = ? AND role = 'user'
+            ORDER BY username
+            """,
+            (user["department"],)
+        )
+    employees = [
+        {"id": row[0], "username": row[1], "department": row[2]}
+        for row in c.fetchall()
+    ]
+    conn.close()
+
+    send_task_notification(department, title, description)
+
     return templates.TemplateResponse("task_create.html", {
         "request": request,
         "user": user,
         "departments": departments,
+        "employees": employees,
         "success": True
     })
     
