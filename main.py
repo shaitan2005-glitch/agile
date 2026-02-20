@@ -676,7 +676,7 @@ def adjust_points(
     task_id: int,
     request: Request,
     new_points: int = Form(...),
-    reason: str = Form(...),
+    reason: Optional[str] = Form(None),
     copy_department: Optional[str] = Form(None),
     user=Depends(require_role("admin", "superadmin"))
 ):
@@ -752,7 +752,7 @@ def adjust_points(
     else:
         c.execute(
             "UPDATE tasks SET points = ?, adjust_comment = ? WHERE id = ?",
-            (new_points, reason.strip(), task_id)
+            (new_points, (reason or "").strip(), task_id)
         )
     conn.commit()
     conn.close()
