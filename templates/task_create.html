@@ -50,6 +50,15 @@
                 </select>
             </div>
             {% endif %}
+            <div class="form-field">
+                <label for="assignee_id">Сотрудник (опционально):</label>
+                <select id="assignee_id" name="assignee_id">
+                    <option value="">-- Весь отдел --</option>
+                    {% for employee in employees %}
+                        <option value="{{ employee.id }}" data-department="{{ employee.department }}">{{ employee.username }} ({{ employee.department }})</option>
+                    {% endfor %}
+                </select>
+            </div>
         </div>
         <div style="margin-top: 20px;">
             <button type="submit" class="btn">Создать задачу</button>
@@ -59,5 +68,31 @@
 		{% endif %}
     </form>
 </div>
+<script>
+    const departmentSelect = document.getElementById("department");
+    const assigneeSelect = document.getElementById("assignee_id");
+
+    function filterEmployeesByDepartment() {
+        if (!departmentSelect || !assigneeSelect) {
+            return;
+        }
+        const selectedDepartment = departmentSelect.value;
+        for (const option of assigneeSelect.options) {
+            if (!option.value) {
+                option.hidden = false;
+                continue;
+            }
+            option.hidden = option.dataset.department !== selectedDepartment;
+        }
+        if (assigneeSelect.selectedOptions.length && assigneeSelect.selectedOptions[0].hidden) {
+            assigneeSelect.value = "";
+        }
+    }
+
+    if (departmentSelect) {
+        departmentSelect.addEventListener("change", filterEmployeesByDepartment);
+        filterEmployeesByDepartment();
+    }
+</script>
 </body>
 </html>
