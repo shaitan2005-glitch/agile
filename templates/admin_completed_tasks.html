@@ -74,14 +74,16 @@
                                                 <option value="{{ i }}" {% if i == t.points %}selected{% endif %}>{{ i }}</option>
                                             {% endfor %}
                                         </select>
-                                        <input type="text" name="reason" placeholder="Комментарий">
+                                        <input type="text" name="reason" placeholder="Комментарий" class="reason-input">
                                         <button type="submit">Сохранить</button>
                                     </div>
                                     <div class="copy-department-row">
-                                        <select name="copy_department">
+                                        <select name="copy_department" class="copy-department-select">
                                             <option value="">Передать в отдел (Необязательно)</option>
                                             {% for dept in all_departments %}
-                                                <option value="{{ dept }}">{{ dept }}</option>
+                                                {% if dept != selected_department %}
+                                                    <option value="{{ dept }}">{{ dept }}</option>
+                                                {% endif %}
                                             {% endfor %}
                                         </select>
                                     </div>
@@ -95,5 +97,31 @@
             <p>Нет выполненных задач за выбранный месяц.</p>
         {% endif %}
     </div>
+    <script>
+        function toggleReasonInput(form) {
+            const departmentSelect = form.querySelector('.copy-department-select');
+            const reasonInput = form.querySelector('.reason-input');
+            if (!departmentSelect || !reasonInput) {
+                return;
+            }
+            const forwardingSelected = departmentSelect.value !== "";
+            reasonInput.style.display = forwardingSelected ? "none" : "";
+            reasonInput.disabled = forwardingSelected;
+            if (forwardingSelected) {
+                reasonInput.value = "";
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            document.querySelectorAll('.points-adjust-form').forEach((form) => {
+                const departmentSelect = form.querySelector('.copy-department-select');
+                if (!departmentSelect) {
+                    return;
+                }
+                toggleReasonInput(form);
+                departmentSelect.addEventListener('change', () => toggleReasonInput(form));
+            });
+        });
+    </script>
 </body>
 </html>

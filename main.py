@@ -494,6 +494,24 @@ def send_task_notification(department: str, title: str, description: str):
         requests.post(url, data=payload, timeout=5)
     except Exception as e:
         print(f"Ошибка отправки уведомления: {e}")
+
+def send_task_taken_notification(from_department: str, to_department: str, title: str):
+    if not from_department or not to_department or from_department == to_department:
+        return
+    chat_id = DEPARTMENT_CHATS.get(to_department)
+    if not chat_id:
+        return
+    message = (
+        f"*Отдел получил задачу от другого отдела*\n"
+        f"Отдел-инициатор: *{from_department}*\n"
+        f"Задача: *{title}*"
+    )
+    url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
+    payload = {"chat_id": chat_id, "text": message, "parse_mode": "Markdown"}
+    try:
+        requests.post(url, data=payload, timeout=5)
+    except Exception as e:
+        print(f"Ошибка отправки уведомления: {e}")
         
 @app.post("/tasks/create", response_class=HTMLResponse)
 def create_task(
@@ -543,19 +561,23 @@ def take_task(task_id: int, user=Depends(get_current_user)):
     conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
     # Проверка, свободна ли задача и от отдела пользователя
-    c.execute("SELECT department, taken_by FROM tasks WHERE id = ?", (task_id,))
+    c.execute("SELECT department, taken_by, assigned_by, title FROM tasks WHERE id = ?", (task_id,))
     row = c.fetchone()
     if not row:
         conn.close()
         raise HTTPException(404, "Задача не найдена")
-    dept, taken = row
+    dept, taken, assigned_by, title = row
     if dept != user["department"] or taken is not None:
         conn.close()
         raise HTTPException(403, "Нельзя взять задачу")
+    c.execute("SELECT department FROM users WHERE id = ?", (assigned_by,))
+    assigned_row = c.fetchone()
+    from_department = assigned_row[0] if assigned_row else ""
     now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     c.execute("UPDATE tasks SET taken_by = ?, taken_at = ? WHERE id = ?", (user["id"], now, task_id))
     conn.commit()
     conn.close()
+    send_task_taken_notification(from_department, dept, title)
     return RedirectResponse(url="/tasks", status_code=303)
     
 @app.post("/tasks/complete/{task_id}")
@@ -654,7 +676,7 @@ def adjust_points(
     task_id: int,
     request: Request,
     new_points: int = Form(...),
-    reason: str = Form(...),
+    reason: Optional[str] = Form(None),
     copy_department: Optional[str] = Form(None),
     user=Depends(require_role("admin", "superadmin"))
 ):
@@ -689,11 +711,26 @@ def adjust_points(
         taken_at,
         completed_at,
     ) = task_row
-    c.execute(
-        "UPDATE tasks SET points = ?, adjust_comment = ? WHERE id = ?",
-        (new_points, reason.strip(), task_id)
-    )
+    forwarded_department = ""
     if copy_department and copy_department != original_department:
+        c.execute(
+            """
+            SELECT 1
+            FROM tasks
+            WHERE department = ?
+              AND title = ?
+              AND description = ?
+              AND assigned_by = ?
+              AND created_at = ?
+            LIMIT 1
+            """,
+            (copy_department, title, description, assigned_by, created_at),
+        )
+        duplicate_exists = c.fetchone() is not None
+        if duplicate_exists:
+            conn.commit()
+            conn.close()
+            return RedirectResponse(url=redirect_url, status_code=303)
         c.execute("""
             INSERT INTO tasks (
                 title, description, points, department, assigned_by,
@@ -704,15 +741,23 @@ def adjust_points(
             description,
             new_points,
             copy_department,
-            user["id"],
-            datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            assigned_by,
+            created_at,
             None,
             None,
             None,
             None,
         ))
+        forwarded_department = copy_department
+    else:
+        c.execute(
+            "UPDATE tasks SET points = ?, adjust_comment = ? WHERE id = ?",
+            (new_points, (reason or "").strip(), task_id)
+        )
     conn.commit()
     conn.close()
+    if forwarded_department:
+        send_task_taken_notification(original_department, forwarded_department, title)
     return RedirectResponse(url=redirect_url, status_code=303)
     
 #Логирование AW
