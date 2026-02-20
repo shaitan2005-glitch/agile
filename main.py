@@ -715,6 +715,7 @@ def adjust_points(
         "UPDATE tasks SET points = ?, adjust_comment = ? WHERE id = ?",
         (new_points, reason.strip(), task_id)
     )
+    forwarded_department = ""
     if copy_department and copy_department != original_department:
         c.execute(
             """
@@ -751,8 +752,11 @@ def adjust_points(
             None,
             None,
         ))
+        forwarded_department = copy_department
     conn.commit()
     conn.close()
+    if forwarded_department:
+        send_task_taken_notification(original_department, forwarded_department, title)
     return RedirectResponse(url=redirect_url, status_code=303)
     
 #Логирование AW
