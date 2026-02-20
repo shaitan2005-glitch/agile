@@ -711,10 +711,6 @@ def adjust_points(
         taken_at,
         completed_at,
     ) = task_row
-    c.execute(
-        "UPDATE tasks SET points = ?, adjust_comment = ? WHERE id = ?",
-        (new_points, reason.strip(), task_id)
-    )
     forwarded_department = ""
     if copy_department and copy_department != original_department:
         c.execute(
@@ -753,6 +749,11 @@ def adjust_points(
             None,
         ))
         forwarded_department = copy_department
+    else:
+        c.execute(
+            "UPDATE tasks SET points = ?, adjust_comment = ? WHERE id = ?",
+            (new_points, reason.strip(), task_id)
+        )
     conn.commit()
     conn.close()
     if forwarded_department:
